@@ -1583,6 +1583,11 @@ class Dropdown(Widget):
                 items_string = 'The dropdown is probably not present'
             raise DropdownItemNotFound('Item {!r} not found. {}'.format(item, items_string))
 
+    def item_title(self, item):
+        el = self.item_element(item)
+        li = self.browser.element('./a', parent=el)
+        return self.browser.get_attribute('title', li)
+
     def item_enabled(self, item):
         """Returns whether the given item is enabled.
 
@@ -1608,10 +1613,18 @@ class Dropdown(Widget):
         try:
             self.open()
             if not self.item_enabled(item):
+                reason = self.item_title(item)
                 raise DropdownItemDisabled(
-                    'Item "{}" of dropdown "{}" is disabled\n'
-                    'The following items are available: {}'
-                    .format(item, self.text, ';'.join(self.items)))
+                    'Item "{item}" of dropdown "{dropdown}" is disabled due to \n'
+                    '{reason}'
+                    'The following items are available: {available}'
+                    .format(
+                        item=item,
+                        dropdown=self.text,
+                        reason=reason,
+                        available=';'.join(self.items)
+                    )
+                )
             self.browser.click(
                 self.item_element(item), ignore_ajax=handle_alert is not None, nav_click=nav_click
             )
